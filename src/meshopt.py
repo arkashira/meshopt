@@ -1,41 +1,37 @@
-import argparse
 import json
 from dataclasses import dataclass
+from typing import List
 
 @dataclass
-class ServiceMeshConfig:
-    services: list
-    monitoring_port: int
+class Route:
+    id: int
+    latency: float
 
-def create_service_mesh_config(services, monitoring_port):
-    return ServiceMeshConfig(services, monitoring_port)
+class MeshOpt:
+    def __init__(self, routes: List[Route]):
+        self.routes = routes
 
-def save_service_mesh_config(config, filename):
-    with open(filename, 'w') as f:
-        json.dump({
-            'services': config.services,
-            'monitoring_port': config.monitoring_port
-        }, f)
+    def suggest_optimizations(self):
+        optimizations = []
+        for route in self.routes:
+            if route.latency > 100:
+                optimizations.append({"route_id": route.id, "optimization": "traffic_mirroring"})
+            elif route.latency > 50:
+                optimizations.append({"route_id": route.id, "optimization": "canary_routes"})
+        return optimizations
 
-def load_service_mesh_config(filename):
-    try:
-        with open(filename, 'r') as f:
-            data = json.load(f)
-        return ServiceMeshConfig(data['services'], data['monitoring_port'])
-    except json.JSONDecodeError as e:
-        raise e
+    def apply_optimization(self, optimization):
+        for route in self.routes:
+            if route.id == optimization["route_id"]:
+                if optimization["optimization"] == "traffic_mirroring":
+                    route.latency -= 10
+                elif optimization["optimization"] == "canary_routes":
+                    route.latency -= 5
+                return route.latency
+        return None
 
-def main():
-    parser = argparse.ArgumentParser(description='Meshopt Service Mesh')
-    parser.add_argument('--config', help='Configuration file')
-    parser.add_argument('--monitoring-port', type=int, help='Monitoring port')
-    args = parser.parse_args()
-    if args.config:
-        config = load_service_mesh_config(args.config)
-    else:
-        services = ['service1', 'service2']
-        config = create_service_mesh_config(services, args.monitoring_port or 8080)
-    print(f'Service Mesh Config: {config}')
-
-if __name__ == '__main__':
-    main()
+    def get_latency(self, route_id):
+        for route in self.routes:
+            if route.id == route_id:
+                return route.latency
+        return None
