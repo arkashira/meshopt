@@ -3,35 +3,37 @@ from dataclasses import dataclass
 from typing import List
 
 @dataclass
-class Route:
-    id: int
-    latency: float
+class ServiceMesh:
+    name: str
+    type: str
+    status: str
+    metrics: dict
 
-class MeshOpt:
-    def __init__(self, routes: List[Route]):
-        self.routes = routes
+class Meshopt:
+    def __init__(self):
+        self.service_meshes = []
 
-    def suggest_optimizations(self):
-        optimizations = []
-        for route in self.routes:
-            if route.latency > 100:
-                optimizations.append({"route_id": route.id, "optimization": "traffic_mirroring"})
-            elif route.latency > 50:
-                optimizations.append({"route_id": route.id, "optimization": "canary_routes"})
-        return optimizations
+    def add_service_mesh(self, service_mesh: ServiceMesh):
+        self.service_meshes.append(service_mesh)
 
-    def apply_optimization(self, optimization):
-        for route in self.routes:
-            if route.id == optimization["route_id"]:
-                if optimization["optimization"] == "traffic_mirroring":
-                    route.latency -= 10
-                elif optimization["optimization"] == "canary_routes":
-                    route.latency -= 5
-                return route.latency
-        return None
+    def get_service_meshes(self):
+        return self.service_meshes
 
-    def get_latency(self, route_id):
-        for route in self.routes:
-            if route.id == route_id:
-                return route.latency
+    def filter_service_meshes(self, name=None, type=None, status=None):
+        filtered_meshes = self.service_meshes
+        if name:
+            filtered_meshes = [mesh for mesh in filtered_meshes if mesh.name == name]
+        if type:
+            filtered_meshes = [mesh for mesh in filtered_meshes if mesh.type == type]
+        if status:
+            filtered_meshes = [mesh for mesh in filtered_meshes if mesh.status == status]
+        return filtered_meshes
+
+    def sort_service_meshes(self, key):
+        return sorted(self.service_meshes, key=lambda x: getattr(x, key))
+
+    def get_metrics(self, name):
+        for mesh in self.service_meshes:
+            if mesh.name == name:
+                return mesh.metrics
         return None

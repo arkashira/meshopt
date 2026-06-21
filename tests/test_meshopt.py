@@ -1,29 +1,39 @@
-import pytest
-from meshopt import MeshOpt, Route
+from meshopt import Meshopt, ServiceMesh
 
-def test_suggest_optimizations():
-    routes = [Route(1, 120), Route(2, 40), Route(3, 60)]
-    meshopt = MeshOpt(routes)
-    optimizations = meshopt.suggest_optimizations()
-    assert len(optimizations) == 2
-    assert optimizations[0]["route_id"] == 1
-    assert optimizations[0]["optimization"] == "traffic_mirroring"
-    assert optimizations[1]["route_id"] == 3
-    assert optimizations[1]["optimization"] == "canary_routes"
+def test_add_service_mesh():
+    meshopt = Meshopt()
+    service_mesh = ServiceMesh("test", "type", "status", {"metric": 1})
+    meshopt.add_service_mesh(service_mesh)
+    assert len(meshopt.get_service_meshes()) == 1
 
-def test_apply_optimization():
-    routes = [Route(1, 120)]
-    meshopt = MeshOpt(routes)
-    optimization = {"route_id": 1, "optimization": "traffic_mirroring"}
-    new_latency = meshopt.apply_optimization(optimization)
-    assert new_latency == 110
+def test_filter_service_meshes():
+    meshopt = Meshopt()
+    service_mesh1 = ServiceMesh("test1", "type1", "status1", {"metric": 1})
+    service_mesh2 = ServiceMesh("test2", "type2", "status2", {"metric": 2})
+    meshopt.add_service_mesh(service_mesh1)
+    meshopt.add_service_mesh(service_mesh2)
+    filtered_meshes = meshopt.filter_service_meshes(name="test1")
+    assert len(filtered_meshes) == 1
+    assert filtered_meshes[0].name == "test1"
 
-def test_get_latency():
-    routes = [Route(1, 120), Route(2, 40)]
-    meshopt = MeshOpt(routes)
-    latency = meshopt.get_latency(1)
-    assert latency == 120
-    latency = meshopt.get_latency(2)
-    assert latency == 40
-    latency = meshopt.get_latency(3)
-    assert latency is None
+def test_sort_service_meshes():
+    meshopt = Meshopt()
+    service_mesh1 = ServiceMesh("test1", "type1", "status1", {"metric": 1})
+    service_mesh2 = ServiceMesh("test2", "type2", "status2", {"metric": 2})
+    meshopt.add_service_mesh(service_mesh1)
+    meshopt.add_service_mesh(service_mesh2)
+    sorted_meshes = meshopt.sort_service_meshes("name")
+    assert sorted_meshes[0].name == "test1"
+    assert sorted_meshes[1].name == "test2"
+
+def test_get_metrics():
+    meshopt = Meshopt()
+    service_mesh = ServiceMesh("test", "type", "status", {"metric": 1})
+    meshopt.add_service_mesh(service_mesh)
+    metrics = meshopt.get_metrics("test")
+    assert metrics == {"metric": 1}
+
+def test_get_metrics_not_found():
+    meshopt = Meshopt()
+    metrics = meshopt.get_metrics("test")
+    assert metrics is None
